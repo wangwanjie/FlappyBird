@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlappyBird · 代码绘制的 iOS 像素小游戏</title>
+<meta name="description" content="FlappyBird 是一款用 SpriteKit + UIKit 写成的 iOS Flappy 小游戏：代码绘制的小鸟、云和管道，5 档难度加自定义，本地榜与全球榜，代码合成的音乐音效。">
+<meta name="theme-color" content="#6fc3f7">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FlappyBird · 代码绘制的 iOS 像素小游戏">
+<meta property="og:description" content="FlappyBird 是一款用 SpriteKit + UIKit 写成的 iOS Flappy 小游戏：代码绘制的小鸟、云和管道，5 档难度加自定义，本地榜与全球榜，代码合成的音乐音效。">
+<meta property="og:image" content="assets/icon-256.webp">
+<link rel="icon" type="image/png" href="assets/icon-180.png">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<script>
+  /* 首屏前确定主题与语言，避免闪烁；URL 参数优先于 localStorage */
+  (function () {
+    var d = document.documentElement;
+    var q = new URLSearchParams(location.search);
+    var t = q.get("theme");
+    if (t !== "light" && t !== "dark" && t !== "system") {
+      try {
+        t = localStorage.getItem("flappybird-theme");
+      } catch (e) {
+        t = null;
+      }
+    }
+    if (t !== "light" && t !== "dark") {
+      t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    d.setAttribute("data-theme", t);
+    var l = q.get("lang");
+    try {
+      l = l || localStorage.getItem("flappybird-lang");
+    } catch (e) {}
+    l = String(l || (navigator.languages && navigator.languages[0]) || navigator.language || "").toLowerCase();
+    d.setAttribute("lang", /^zh[-_]?(tw|hk|mo|hant)/.test(l) ? "zh-Hant" : (l.indexOf("zh") === 0 ? "zh-Hans" : "en"));
+  })();
+</script>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="a.skip">跳到正文</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" data-i18n-aria="a.home" aria-label="FlappyBird 首页">
+      <img src="assets/icon-64.webp" srcset="assets/icon-64.webp 1x, assets/icon-128.webp 2x" width="36" height="36" alt="" decoding="async">
+      <span>FlappyBird</span>
+    </a>
+    <div class="seg" role="group" data-i18n-aria="a.lang" aria-label="切换语言">
+      <button type="button" data-lang-btn="zh-Hans" lang="zh-Hans" aria-pressed="true">简</button>
+      <button type="button" data-lang-btn="zh-Hant" lang="zh-Hant" aria-pressed="false">繁</button>
+      <button type="button" data-lang-btn="en" lang="en" aria-pressed="false">EN</button>
+    </div>
+    <button type="button" class="icon-btn" id="theme-btn" aria-label="主题：跟随系统（点击切换）"></button>
+    <a class="icon-btn" href="https://github.com/wangwanjie/FlappyBird" data-i18n-aria="a.github" aria-label="在 GitHub 查看 FlappyBird">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+    </a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="sky-deco" aria-hidden="true">
+      <span class="pcloud c1"></span>
+      <span class="pcloud c2"></span>
+      <span class="pcloud c3"></span>
+      <span class="moon"></span>
+      <span class="star" style="top:48px;left:8%"></span>
+      <span class="star" style="top:120px;left:22%;animation-delay:-1s"></span>
+      <span class="star" style="top:30px;left:38%;animation-delay:-2s"></span>
+      <span class="star" style="top:160px;left:47%;animation-delay:-.5s"></span>
+      <span class="star" style="top:80px;left:60%;animation-delay:-1.6s"></span>
+      <span class="star" style="top:260px;left:4%;animation-delay:-2.4s"></span>
+      <span class="star" style="top:330px;left:30%;animation-delay:-.9s"></span>
+      <span class="star" style="top:200px;left:72%;animation-delay:-2.8s"></span>
+    </div>
+    <div class="wrap hero-grid">
+      <div>
+        <h1>FlappyBird</h1>
+        <span class="alias" data-i18n="hero.alias">主屏幕名称：Neon Gate</span>
+        <p class="lead" data-i18n="hero.lead">用 SpriteKit + UIKit 写成的 iOS Flappy 小游戏。小鸟、云朵和管道全部由代码绘制，5 档难度外加自定义，本地榜与全球榜，背景音乐和音效也由代码实时合成。</p>
+        <div class="cta">
+          <a class="btn" href="#download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M12 3v12M6 10l6 6 6-6M4 21h16"/></svg>
+            <span data-i18n="hero.dl">下载 IPA</span>
+          </a>
+          <a class="btn alt" href="https://github.com/wangwanjie/FlappyBird">
+            <span data-i18n="hero.gh">GitHub</span>
+          </a>
+        </div>
+        <p class="meta-line" data-i18n="hero.meta">v1.1 · iOS 15.0+ · iPhone / iPad · Ad Hoc 签名，仅限已登记设备</p>
+      </div>
+      <div class="console">
+        <div class="screen">
+          <canvas id="game" tabindex="0" role="img" data-i18n-aria="a.game" aria-label="可玩的迷你 FlappyBird：点击画面或按空格起跳"></canvas>
+        </div>
+        <div class="console-bar">
+          <span><span data-i18n="console.hint">点击画面或按</span> <kbd>Space</kbd> <span data-i18n="console.hint2">起跳</span></span>
+          <span class="best"><span data-i18n="console.best">本机最高</span> <b class="mono" id="best-score">0</b></span>
+        </div>
+      </div>
+    </div>
+    <div class="turf" aria-hidden="true"></div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow" data-i18n="f.eyebrow">游戏里有什么</span>
+        <h2 data-i18n="f.title">一只代码画出来的鸟，和一整套小细节</h2>
+        <p class="sub" data-i18n="f.sub">下面这些都能在 App 里找到，网页上的迷你版只还原了最核心的那一下起跳。</p>
+      </div>
+      <div class="features">
+        <article class="feature reveal">
+          <div class="ficon" style="background:#87cffa" aria-hidden="true">
+            <svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="9" fill="#fa4d40" stroke="#ff9926" stroke-width="2"/><circle cx="14" cy="14" r="4.5" fill="#ffe038"/><circle cx="20" cy="13" r="3" fill="#fff"/><circle cx="21" cy="13" r="1.3" fill="#261f33"/></svg>
+          </div>
+          <h3 data-i18n="f1.t">代码绘制的场景</h3>
+          <p data-i18n="f1.d">小鸟、云朵、山丘、地面和管道都由 SpriteKit 形状节点实时绘制，场景里没有一张贴图。</p>
+        </article>
+        <article class="feature reveal">
+          <div class="ficon" style="background:#5cbf73" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="#fff" stroke="#23324d" stroke-width="2"><rect x="3" y="16" width="4" height="9"/><rect x="9" y="12" width="4" height="13"/><rect x="15" y="8" width="4" height="17"/><rect x="21" y="3" width="4" height="22" fill="#fa4d40"/></svg>
+          </div>
+          <h3 data-i18n="f2.t">5 档难度 + 自定义</h3>
+          <p data-i18n="f2.d">从非常简单到地狱五档预设；自定义难度可调场景速度（0.85–1.30 倍）和上下管道间距（148–245）。</p>
+        </article>
+        <article class="feature reveal">
+          <div class="ficon" style="background:#ffe038" aria-hidden="true">
+            <svg viewBox="0 0 28 28" stroke="#23324d" stroke-width="2"><rect x="3" y="3" width="10" height="10" fill="#87cffa"/><rect x="15" y="3" width="10" height="10" fill="#f9a8c9"/><rect x="3" y="15" width="10" height="10" fill="#7b4fc4"/><rect x="15" y="15" width="10" height="10" fill="#2f8a4a"/></svg>
+          </div>
+          <h3 data-i18n="f3.t">10 款皮肤</h3>
+          <p data-i18n="f3.d">经典晴空、樱花春日、霓虹黄昏、月夜港湾等 10 款皮肤，各有自己的小鸟造型与背景装饰。前 2 款免费，其余为内购永久解锁。</p>
+        </article>
+        <article class="feature reveal">
+          <div class="ficon" style="background:#ff9926" aria-hidden="true">
+            <svg viewBox="0 0 28 28" stroke="#23324d" stroke-width="2"><rect x="10" y="6" width="8" height="19" fill="#ffe038"/><rect x="2" y="12" width="8" height="13" fill="#e8eef7"/><rect x="18" y="16" width="8" height="9" fill="#d9a066"/></svg>
+          </div>
+          <h3 data-i18n="f4.t">本地榜 + 全球榜</h3>
+          <p data-i18n="f4.d">本地榜按难度记录历史成绩；全球榜按难度展示，会缓存最近一次成功的结果，成功同步后冷却 10 分钟。</p>
+        </article>
+        <article class="feature reveal">
+          <div class="ficon" style="background:#f9a8c9" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="none" stroke="#23324d" stroke-width="2.6" stroke-linecap="square"><path d="M3 14h3l3-7 4 14 4-10 3 6h5"/></svg>
+          </div>
+          <h3 data-i18n="f5.t">代码合成的音乐音效</h3>
+          <p data-i18n="f5.d">9 种背景音乐和 9 种音效风格，都由代码实时合成。前 2 种免费，其余随内购解锁。</p>
+        </article>
+        <article class="feature reveal">
+          <div class="ficon" style="background:#e8eef7" aria-hidden="true">
+            <svg viewBox="0 0 28 28" fill="#23324d"><text x="2" y="13" font-size="11" font-weight="900" font-family="sans-serif">文</text><text x="13" y="25" font-size="12" font-weight="900" font-family="sans-serif">A</text></svg>
+          </div>
+          <h3 data-i18n="f6.t">运行时切换语言</h3>
+          <p data-i18n="f6.d">简体中文、繁體中文、English 或跟随系统，在设置里切换后界面立即刷新，不用重启。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block alt" id="screens">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow" data-i18n="s.eyebrow">截图</span>
+        <h2 data-i18n="s.title">App 实机画面</h2>
+        <p class="sub" data-i18n="s.sub">截图来自 iPhone 模拟器，使用「霓虹黄昏」皮肤。</p>
+      </div>
+      <div class="shots">
+        <figure class="shot reveal">
+          <div class="frame"><img data-shot="home" src="assets/shots/zh-home-320.webp" srcset="assets/shots/zh-home-320.webp 320w, assets/shots/zh-home-640.webp 640w" sizes="(max-width: 640px) 62vw, 260px" width="320" height="695" loading="lazy" decoding="async" data-i18n-alt="s1.alt" alt="FlappyBird 首页截图，霓虹黄昏皮肤"></div>
+          <figcaption data-i18n="s1">首页</figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <div class="frame"><img data-shot="play" src="assets/shots/zh-play-320.webp" srcset="assets/shots/zh-play-320.webp 320w, assets/shots/zh-play-640.webp 640w" sizes="(max-width: 640px) 62vw, 260px" width="320" height="695" loading="lazy" decoding="async" data-i18n-alt="s2.alt" alt="游戏中截图，小鸟正在穿过管道"></div>
+          <figcaption data-i18n="s2">穿过能量门</figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <div class="frame"><img data-shot="over" src="assets/shots/zh-over-320.webp" srcset="assets/shots/zh-over-320.webp 320w, assets/shots/zh-over-640.webp 640w" sizes="(max-width: 640px) 62vw, 260px" width="320" height="695" loading="lazy" decoding="async" data-i18n-alt="s3.alt" alt="一局结束后的结算面板截图"></div>
+          <figcaption data-i18n="s3">结算：得分、连击与最佳</figcaption>
+        </figure>
+        <figure class="shot reveal">
+          <div class="frame"><img data-shot="difficulty" src="assets/shots/zh-difficulty-320.webp" srcset="assets/shots/zh-difficulty-320.webp 320w, assets/shots/zh-difficulty-640.webp 640w" sizes="(max-width: 640px) 62vw, 260px" width="320" height="695" loading="lazy" decoding="async" data-i18n-alt="s4.alt" alt="难度选择页截图，列出五档预设与自定义难度"></div>
+          <figcaption data-i18n="s4">难度选择</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="difficulty">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow" data-i18n="d.eyebrow">难度</span>
+        <h2 data-i18n="d.title">五档预设，外加自定义</h2>
+        <p class="sub" data-i18n="d.sub">间距是上下管道之间的空隙，间隔是相邻两组管道出现的时间。</p>
+      </div>
+      <div class="levels">
+        <div class="level reveal" style="--h:26px"><div class="pipe-mini"></div><b data-i18n="d1">非常简单</b><span><span data-i18n="d.gap">间距</span> 245</span><span><span data-i18n="d.every">间隔</span> 2.75 <span data-i18n="d.sec">秒</span></span></div>
+        <div class="level reveal" style="--h:44px"><div class="pipe-mini"></div><b data-i18n="d2">简单</b><span><span data-i18n="d.gap">间距</span> 220</span><span><span data-i18n="d.every">间隔</span> 2.45 <span data-i18n="d.sec">秒</span></span></div>
+        <div class="level reveal" style="--h:62px"><div class="pipe-mini"></div><b data-i18n="d3">普通</b><span><span data-i18n="d.gap">间距</span> 190</span><span><span data-i18n="d.every">间隔</span> 2.20 <span data-i18n="d.sec">秒</span></span></div>
+        <div class="level reveal" style="--h:80px"><div class="pipe-mini"></div><b data-i18n="d4">困难</b><span><span data-i18n="d.gap">间距</span> 165</span><span><span data-i18n="d.every">间隔</span> 1.95 <span data-i18n="d.sec">秒</span></span></div>
+        <div class="level reveal" style="--h:100px"><div class="pipe-mini"></div><b data-i18n="d5">地狱</b><span><span data-i18n="d.gap">间距</span> 148</span><span><span data-i18n="d.every">间隔</span> 1.75 <span data-i18n="d.sec">秒</span></span></div>
+      </div>
+      <p class="custom-note reveal" data-i18n="d.custom">自定义难度：场景速度 0.85–1.30 倍，管道间距 148–245，都限制在验证过的安全范围内。</p>
+    </div>
+  </section>
+
+  <section class="block alt" id="download">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow" data-i18n="i.eyebrow">下载</span>
+        <h2 data-i18n="i.title">下载与安装</h2>
+        <p class="sub" data-i18n="i.sub">FlappyBird 没有上架 App Store，安装包只在 GitHub Releases 分享。</p>
+      </div>
+      <div class="install">
+        <div class="dl-card reveal">
+          <div class="dl-head">
+            <img src="assets/icon-128.webp" srcset="assets/icon-128.webp 1x, assets/icon-256.webp 2x" width="72" height="72" loading="lazy" decoding="async" data-i18n-alt="a.icon" alt="FlappyBird 图标">
+            <div>
+              <strong>FlappyBird</strong>
+              <span class="meta-line" data-i18n="i.alias">主屏幕上显示为 Neon Gate</span>
+            </div>
+          </div>
+          <dl class="specs">
+            <dt data-i18n="i.version">版本</dt><dd class="mono">1.1 (1)</dd>
+            <dt data-i18n="i.req">系统要求</dt><dd data-i18n="i.reqv">iOS 15.0 或更高</dd>
+            <dt data-i18n="i.device">设备</dt><dd>iPhone · iPad</dd>
+            <dt data-i18n="i.size">大小</dt><dd class="mono">5.2 MB</dd>
+            <dt data-i18n="i.sign">签名</dt><dd data-i18n="i.signv">Ad Hoc（描述文件有效期至 2027-04-05）</dd>
+          </dl>
+          <div class="cta">
+            <a class="btn" href="https://github.com/wangwanjie/FlappyBird/releases/latest/download/FlappyBird.ipa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square" aria-hidden="true"><path d="M12 3v12M6 10l6 6 6-6M4 21h16"/></svg>
+              <span data-i18n="i.dl">下载 IPA</span>
+            </a>
+            <a class="btn alt" href="https://github.com/wangwanjie/FlappyBird/releases" data-i18n="i.all">全部版本</a>
+          </div>
+          <ol class="steps">
+            <li><h4 data-i18n="st1.t">下载 IPA</h4><p data-i18n="st1.d">点上方按钮，或到 GitHub Releases 页面下载。</p></li>
+            <li><h4 data-i18n="st2.t">用 Mac 装到设备上</h4><p data-i18n="st2.d">用数据线连接 iPhone 或 iPad，在访达侧栏选中设备，把 IPA 拖进设备窗口；也可以用 Apple Configurator 或 Xcode 的「设备与模拟器」窗口安装。</p></li>
+            <li><h4 data-i18n="st3.t">打开 Neon Gate</h4><p data-i18n="st3.d">主屏幕出现 Neon Gate 图标后就能开玩。</p></li>
+          </ol>
+        </div>
+        <div class="warn reveal" role="note">
+          <h3 data-i18n="w.title">安装限制，请先看这里</h3>
+          <p data-i18n="w.p1">这是 Ad Hoc 签名的安装包，只能安装在开发者描述文件里登记过的设备上，其他设备会安装失败。</p>
+          <p data-i18n="w.p2">没有登记的设备可以尝试用 AltStore、Sideloadly 等工具以自己的 Apple ID 重新签名后安装，能否成功取决于工具和系统版本，这里不作保证。免费 Apple ID 的签名 7 天后过期；iOS 16 及以上运行自签应用需要打开开发者模式。</p>
+          <p data-i18n="w.p3">描述文件 2027-04-05 到期，之后需要换用新版本。内购在这个安装包里的可用性未经验证。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="privacy">
+    <div class="wrap">
+      <div class="reveal">
+        <span class="eyebrow" data-i18n="p.eyebrow">隐私</span>
+        <h2 data-i18n="p.title">成绩上传由你决定</h2>
+      </div>
+      <div class="privacy">
+        <article class="feature reveal">
+          <h3 data-i18n="p1.t">保存在本机</h3>
+          <p data-i18n="p1.d">历史成绩、难度、皮肤、音频和语言设置都保存在设备本地。</p>
+        </article>
+        <article class="feature reveal">
+          <h3 data-i18n="p2.t">全球榜上传需要满足条件</h3>
+          <p data-i18n="p2.d">只有设置了昵称、打开「成绩上传」、授权定位、网络可用且分数达到门槛时，才会上传一局成绩。上传内容包括昵称、分数、难度、用时、定位坐标与国家/地区、安装 ID 和 App 版本。</p>
+        </article>
+        <article class="feature reveal">
+          <h3 data-i18n="p3.t">会访问的网络服务</h3>
+          <p data-i18n="p3.d">全球榜读写走 neongate.vanjay.cn，App 还会拉取远程配置；地名反查可能用到 OpenStreetMap Nominatim。关掉「成绩上传」就不会进入全球榜。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://vanjay.cn" data-i18n="ft.more">VanJay 的更多作品</a>
+    <a href="https://github.com/wangwanjie/FlappyBird" data-i18n="ft.repo">GitHub 仓库</a>
+    <a href="https://github.com/wangwanjie/FlappyBird/issues" data-i18n="ft.issue">反馈问题</a>
+    <span class="copy">© <span id="year">2026</span> VanJay</span>
+  </div>
+</footer>
+
+<script src="assets/site.js" defer></script>
+<script src="assets/game.js" defer></script>
+</body>
+</html>
